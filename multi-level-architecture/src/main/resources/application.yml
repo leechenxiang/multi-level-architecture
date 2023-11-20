@@ -1,0 +1,19 @@
+#server:
+#  port: 6060
+
+spring:
+  application:
+    name: multi-level-architecture
+  profiles:
+    active: prod
+
+# 整合mybatis
+mybatis:
+  type-aliases-package: com.itzixi.pojo
+  mapper-locations: classpath:mapper/*.xml
+
+# 通用mapper工具的配置
+mapper:
+  mappers: com.itzixi.my.mapper.MyMapper
+  not-empty: false
+  identity: MYSQL

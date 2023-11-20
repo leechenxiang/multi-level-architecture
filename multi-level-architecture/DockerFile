@@ -1,0 +1,7 @@
+FROM openjdk:8
+EXPOSE 9090
+MAINTAINER fengjianyingyue
+
+VOLUME /mydata
+COPY target/multi-level-architecture.jar /multi-level-architecture.jar
+ENTRYPOINT ["java","-jar","-Xms128m","-Xmx256m","/multi-level-architecture.jar"]

@@ -1,0 +1,98 @@
+## 配置的类型，为部署文件，同左侧菜单“应用负载-工作负载-点击进入-更多操作-编辑YAML查看”
+kind: Deployment
+## 应用的版本号
+apiVersion: apps/v1
+## 应用的元数据信息
+metadata:
+  ## 应用的名称
+  name: multi-level-architecture
+  ## 项目的命名空间，和kubesphere中定义的保持一致
+  namespace: my-project
+  ## 标签，与应用名称保持一致
+  labels:
+    app: multi-level-architecture
+## 详细配置描述
+spec:
+  ## 应用实例的副本数，填入n个就会启动n个实例，前提是硬件资源给力
+  replicas: 1
+  selector:
+    ## 与应用名称保持一致
+    matchLabels:
+      app: multi-level-architecture
+  ## 模板信息
+  template:
+    metadata:
+      labels:
+        ## 与应用名称保持一致
+        app: multi-level-architecture
+    spec:
+      ## 容器的详细配置信息
+      containers:
+        ## 容器名称
+        - name: container-multi-level-architecture
+          ## 镜像，使用流水线构建的过程中会使用动态参数来获取值，便于devops动态构建
+          image: $REGISTRY/$DOCKERHUB_NAMESPACE/$PROJECT_NAME:$PROJECT_VERSION
+          ## 端口映射
+          ports:
+            - name: tcp-9090
+              containerPort: 9090
+              protocol: TCP
+          ## 资源配额
+          resources:
+            limits:
+              cpu: 500m
+              memory: 500Mi
+            requests:
+              cpu: 50m
+              memory: 50Mi
+          ### 中断日志保存路径
+          terminationMessagePath: /dev/termination-log
+          ## 中断消息策略: 文件形式
+          terminationMessagePolicy: File
+          ## 镜像拉取策略
+          imagePullPolicy: IfNotPresent
+      ## 重启策略
+      restartPolicy: Always
+      ## 优雅停机
+      terminationGracePeriodSeconds: 30
+  strategy:
+    ## 滚动更新: 比较优雅的版本更新方式，多个容器存在的情况下，先停止一个启动一个完毕后依次执行，而不是全部停止全部启动
+    type: RollingUpdate
+    rollingUpdate:
+      ## 更新的时候不可用的比例，比如1000台节点，可以关闭250台，再滚动下一个批次的260-500台
+      maxUnavailable: 25%
+      ## 更新期间最低的存活数，比如1000台节点中至少要有250个节点是可用的
+      maxSurge: 25%
+  ## 应用更新的历史版本，可以保存10个
+  revisionHistoryLimit: 10
+  ## 升级过程中有可能由于各种原因升级卡住，600秒没有响应则认为有问题，标记失败
+  progressDeadlineSeconds: 600
+
+## 分隔符，不同配置类型之间可以用 ‘---’ 进行连接，否则每个不同的YAML只能作为单独的一份配置文件使用
+---
+
+## 配置的类型，为服务文件，同左侧菜单“应用负载-服务-点击进入-更多操作-编辑YAML查看”
+kind: Service
+## 版本号
+apiVersion: v1
+## 元数据信息
+metadata:
+  name: multi-level-architecture
+  namespace: my-project
+  labels:
+    app: multi-level-architecture
+## 详细配置信息
+spec:
+  ports:
+    - name: tcp-9090
+      protocol: TCP
+      port: 9090
+      targetPort: 9090
+      ## 对外发布的端口，可以在公网被请求到
+      nodePort: 9090
+  selector:
+    app: multi-level-architecture
+  ## 外部访问的方式
+  type: NodePort
+  ## 会话的分发策略
+  sessionAffinity: None
